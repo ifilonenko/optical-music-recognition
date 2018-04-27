@@ -17,5 +17,23 @@ Installing collected packages: midi
 Successfully installed midi-0.2.3
 > pip install -r requirements.txt
 ...
->
+> brew install poppler
+```
+
+Make sure to install LillyPond found [here](http://lilypond.org/download.html)
+ and MuseScrore 2 found [here](https://musescore.org/en).
+
+## Step-by-Step
+### Downloading files
+```bash
+> python download_score.py --api-key <API_KEY>
+```
+### Training
+```bash
+> python trainer.py --trainer trainer --epoch 100 --model model
+```
+
+### Inference
+```bash
+> python inference.py --trainer trainer --model model --image <INPUT_IMG_PATH>
 ```
