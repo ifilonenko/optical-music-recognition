@@ -1,3 +1,6 @@
 venv/*
 .api
 __pycache__
+data/training
+data/validation
+data/evaluation
