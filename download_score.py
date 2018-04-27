@@ -58,7 +58,7 @@ if __name__ == "__main__":
         os.makedirs(dir_notes)
         curr_ids = dir_ids[parent_dir]
         good_ids = []
-        for i, score_id in enumerate(curr_id):
+        for i, score_id in enumerate(curr_ids):
             # We download the first score
             print('%d/%d' % (i, len(curr_ids)))
             try:
