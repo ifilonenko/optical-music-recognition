@@ -6,5 +6,3 @@ data/training
 data/validation
 data/evaluation
 trainerSetup.p
-omr-example.ipynb
-optional-jupyter-requirements.txt
