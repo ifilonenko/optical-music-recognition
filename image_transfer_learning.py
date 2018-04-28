@@ -93,25 +93,20 @@ def grab_ids(file_list, config: Configs):
     of the images using ResNet50
 """
 class TransferLearning:
-    def __init__(self):
-        configs = Configs()
-        # Convert pdf to images
-        convert_dir_pdf2img(configs)
+    def __init__(self, c: Configs, skip_image=False):
+        if not skip_image:
+            # Convert pdf to images
+            convert_dir_pdf2img(c)
         # Build ResNet50
         image_model = build_res_net()
         # Compute vectors from images
         id_dir = {}
-        for i, parent_dir in enumerate(configs.directories):
-            print("Building list for %s" % parent_dir)
-            print("==========================")
-            output_dir = 'data/%s' % parent_dir
-            dir_imgs = '%s/images' % output_dir
-            id_dir[configs.directories[i]] = grab_ids(dir_imgs, configs)
-        for i, parent_dir in enumerate(configs.directories):
+        for i, parent_dir in enumerate(c.directories):
             print("Working on %s" % parent_dir)
             print("==========================")
             output_dir = 'data/%s' % parent_dir
             dir_imgs = '%s/images' % output_dir
-            id_dir[configs.directories[i]] = build_vector_features(\
-            image_model, output_dir, dir_imgs, configs)
+            id_dir[c.directories[i]] = build_vector_features(\
+            image_model, output_dir, dir_imgs, c)
         self.dir_of_ids = id_dir
+        self.data_util = None

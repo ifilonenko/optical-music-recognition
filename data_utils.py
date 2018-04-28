@@ -49,3 +49,8 @@ class DataUtil:
         np.array([one_hot[:self.INDX]])),\
         self.le_duration.inverse_transform(\
         self.lb_duration.inverse_transform(np.array([one_hot[self.INDX:]])))]
+
+    def data_util_global_vals(self):
+        self.stop_state = np.zeros((1, self.encoding_size+1))
+        self.stop_state[0][self.encoding_size] = 1.0
+        self.middle_c = np.append(self.encode_pitch_duration([48., 1.0]), 0)

@@ -23,7 +23,19 @@ Successfully installed midi-0.2.3
 Make sure to install LillyPond found [here](http://lilypond.org/download.html)
  and MuseScrore 2 found [here](https://musescore.org/en).
 
-## Step-by-Step
+## Quick guide
+We have included the `config.p`, `data_util.p`, and `model.h5` files that were
+trained across all data files. We also have included the `encoder_example.h5`
+and `decoder_example.h5` files so that you may immediately run inference.
+An example inference command that can be immediately run upon
+cloning this repo is provided below:
+```bash
+> python inference.py --configs configs --data-util data_util \
+--model model --encoder encoder_example --decoder decoder_example \
+--output output_example --image data/evaluation/images/144269.jpg
+```
+
+## Step-by-Step Breakdown
 ### Downloading files
 ```bash
 > python download_score.py --api-key <API_KEY>
@@ -35,5 +47,7 @@ Make sure to install LillyPond found [here](http://lilypond.org/download.html)
 
 ### Inference
 ```bash
-> python inference.py --trainer trainer --model model --image <INPUT_IMG_PATH>
+> python inference.py --configs configs --data-util data_util \
+--model model --encoder encoder --decoder decoder \
+--output output --image <YOUR_IMAGE_HERE>
 ```

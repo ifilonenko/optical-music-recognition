@@ -12,11 +12,11 @@ from data_utils import DataUtil
 from configs import Configs
 from image_transfer_learning import TransferLearning
 from models import EncoderDecoderModel
+from utils import MacOSFile, pickle_dump, pickle_load
 
 class TrainerInstance:
     def __init__(self, c: Configs):
         self.configs = c
-        self.evaluation_data = np.loadtxt("data/evaluation/vectors.out")
 
     def set_data_util_values(self, dataUtil: DataUtil):
         self.data_util = dataUtil
@@ -27,6 +27,7 @@ class TrainerInstance:
 class TrainerSetup(TrainerInstance):
     def __init__(self, c: Configs):
         super().__init__(c)
+        self.evaluation_data = np.loadtxt("data/evaluation/vectors.out")
         self.training_data = np.loadtxt("data/training/vectors.out")
         self.validation_data = np.loadtxt("data/validation/vectors.out")
 
@@ -52,11 +53,11 @@ class TrainerSetup(TrainerInstance):
 
     def set_results(self, tf: TransferLearning):
         training_results, flattened_training_results, training_good_ids = \
-        self.build_data("training", tf)
+            self.build_data("training", tf)
         validation_results, flattened_validation_results, validation_good_ids =\
-        self.build_data("validation", tf)
+            self.build_data("validation", tf)
         evaluation_results, flattened_evaluation_results, evaluation_good_ids =\
-        self.build_data("evaluation", tf)
+            self.build_data("evaluation", tf)
         self.training_results = training_results
         self.flattened_training_results = flattened_training_results
         self.training_good_ids = training_good_ids
@@ -136,60 +137,70 @@ class Trainer(TrainerInstance):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run script to train the' + \
     'Encoder Decoder Model and output the trained model for inference.')
-    parser.add_argument('--trainer', type=str, help='name of pickled Trainer')
+    parser.add_argument('--configs', \
+        type=str, help='name of where to store Configs')
+    parser.add_argument('--data-util', \
+        type=str, help='name of where to save DataUtil')
     parser.add_argument('--model', type=str, help='name of Keras Saved Model')
     parser.add_argument('--epochs', type=int, help='number of epochs')
+    parser.add_argument('--no-image', \
+        action='store_true', help='skip the pdf2img conversion process')
     args = vars(parser.parse_args())
-    trainer_file_name = "cache/trainer.p"
-    if args["trainer"]:
-        trainer_file_name = 'cache/{}.p'.format(args["trainer"])
-    if not os.path.exists(trainer_file_name):
-        print("Building Trainer object")
-        print("=======================")
-        print("Running Transfer Learning")
-        transfer_learning = TransferLearning()
-        print("Setting up configs")
-        configs = Configs()
-        print("Processing data for Encoder-Decoder Training")
-        trainerSetup = TrainerSetup(configs)
-        trainerSetup.set_results(transfer_learning)
-        data_util = DataUtil(trainerSetup.flattened_training_results,\
-                             trainerSetup.flattened_validation_results,\
-                             trainerSetup.flattened_evaluation_results)
-        data_util.fit_labelers()
-        data_util.set_INDX()
-        assert(data_util.decode_pitch_duration(\
-        data_util.encode_pitch_duration([44., 0.25])) == \
-            [np.array([44.]), np.array([0.25])])
-        trainerSetup.set_data_util_values(data_util)
-        trainerSetup.one_hot_conversion()
-        trainer = Trainer(configs, transfer_learning.dir_of_ids)
-        trainer.set_data_util_values(data_util)
-        trainer.build_inputs(trainerSetup)
-        print("Finished data formating for Encoder-Decoder Training")
-        print('Dumping Trainer object at: {}'.format(trainer_file_name))
-        pickle.dump(trainer, open(trainer_file_name, "wb"))
-    else:
-        print('Loading existing trainer from {}'.format(trainer_file_name))
+    print("Building Trainer object")
+    print("=======================")
+    print("Setting up configs")
+    configs = Configs()
+    configs_file_name = "cache/configs.p"
+    if args["configs"]:
+        configs_file_name = 'cache/{}.p'.format(args["configs"])
+    pickle_dump(configs, configs_file_name)
+    print("Running Transfer Learning")
+    skip_image_value = False
+    if args["no_image"]:
+        skip_image_value = args["no_image"]
+    transfer_learning = TransferLearning(configs, skip_image_value)
+    print("Processing data for Encoder-Decoder Training")
+    trainerSetup = TrainerSetup(configs)
+    trainerSetup.set_results(transfer_learning)
+    print("Fitting decoding and encoding for LabelEncoding")
+    data_util = DataUtil(trainerSetup.flattened_training_results,\
+                         trainerSetup.flattened_validation_results,\
+                         trainerSetup.flattened_evaluation_results)
+    data_util.fit_labelers()
+    data_util.set_INDX()
+    data_util.data_util_global_vals()
+    data_util_file_name = "cache/data_util.p"
+    if args["data_util"]:
+        data_util_file_name = 'cache/{}.p'.format(args["data_util"])
+    assert(data_util.decode_pitch_duration(\
+    data_util.encode_pitch_duration([44., 0.25])) == \
+        [np.array([44.]), np.array([0.25])])
+    pickle_dump(data_util, data_util_file_name)
+    trainerSetup.set_data_util_values(data_util)
+    print("Doing One Hot Encodings of data")
+    trainerSetup.one_hot_conversion()
+    trainer = Trainer(configs, transfer_learning.dir_of_ids)
+    trainer.set_data_util_values(data_util)
+    trainer.build_inputs(trainerSetup)
+    print("Finished data formating for Encoder-Decoder Training")
     model_file_name = "cache/model.h5"
     if args["model"]:
         model_file_name = 'cache/{}.h5'.format(args["model"])
     if not os.path.exists(model_file_name):
-        trainer_load = pickle.load(open(trainer_file_name, "rb"))
         if args["epochs"]:
-            trainer_load.configs.number_of_epochs = args["epochs"]
+            trainer.configs.number_of_epochs = args["epochs"]
         print("Beginning the training of Encoder-Decoder")
         model = EncoderDecoderModel(\
-            trainer_load.configs, trainer_load.data_util.encoding_size)
+            trainer.configs, trainer.data_util.encoding_size)
         model.build_initial_model()
         model.compile()
-        trainer_load.fit_model(model, model_file_name)
+        trainer.fit_model(model, model_file_name)
         new_model = load_model(model_file_name)
         print('Evaluation score: %f' % \
-        new_model.evaluate([trainer_load.encoder_input_data_evaluation,\
-            trainer_load.decoder_input_data_evaluation],\
-                        trainer_load.decoder_output_data_evaluation,\
-                        batch_size=trainer_load.configs.batch_size,\
+        new_model.evaluate([trainer.encoder_input_data_evaluation,\
+            trainer.decoder_input_data_evaluation],\
+                        trainer.decoder_output_data_evaluation,\
+                        batch_size=trainer.configs.batch_size,\
                         verbose=1))
     else:
         print('Model exists at {}'.format(model_file_name))

@@ -4,4 +4,4 @@ __pycache__
 data/training
 data/validation
 data/evaluation
-*.p
+trainerSetup.p
