@@ -58,7 +58,7 @@ class Inference:
             [s_v[0].reshape(1, 1, lstm_size), s_v[1].reshape(1, 1, lstm_size)])
         output_result = []
         for row in output_tokens[0]:
-            if (row == self.data_util.stop_state).any():
+            if np.argmax(row) == self.data_util.encoding_size:
                 break
             else:
                 pitch_indx = np.argmax(row[:-1][:self.indx])
@@ -73,8 +73,11 @@ class Inference:
     def output_stream(self, note_pd_lst):
         stream = Stream()
         for note_pair in note_pd_lst:
-            n = note.Note(pitch.Pitch(\
-                note_pair[0][0]), quarterLength=note_pair[1][0])
+            if note_pair[0][0] == 144.:
+                n = note.Rest(ql=note_pair[1][0])
+            else:
+                n = note.Note(pitch.Pitch(\
+                    note_pair[0][0]), quarterLength=note_pair[1][0])
             stream.append(n)
         return stream
 

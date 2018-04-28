@@ -1,7 +1,10 @@
 venv/*
 .api
+.ipynb_checkpoints/
 __pycache__
 data/training
 data/validation
 data/evaluation
 trainerSetup.p
+omr-example.ipynb
+optional-jupyter-requirements.txt
